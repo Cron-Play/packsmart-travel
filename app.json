@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "PackSmart Travel Planner",
-    "slug": "PackSmart Travel Planner",
+    "slug": "pack-smart-travel-planner-uagrcj",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/app-icon-whg.png",
@@ -25,7 +25,7 @@
         "backgroundColor": "#0EA5E9"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.packsmart.app"
+      "package": "com.cronplay.packsmart"
     },
     "web": {
       "favicon": "./assets/images/final_quest_240x240.png",
@@ -42,7 +42,7 @@
     },
     "extra": {
       "router": {},
-      "backendUrl": "https://pka9s4bqakktts6r3382fy67v95ajj8g.app.specular.dev"
+      "backendUrl": "https://awd52dy4pf5zcnffdax7s4z5rcgegfwk.app.specular.dev"
     }
   }
 }
