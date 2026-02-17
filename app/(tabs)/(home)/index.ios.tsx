@@ -12,6 +12,8 @@ import {
   Alert,
 } from 'react-native';
 import { Stack } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { colors, spacing, borderRadius, typography, shadows } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { WeatherType, TripType, TravelType, PackingStyle, PackingItem, TripTemplate } from '@/types/packing';
@@ -282,29 +284,36 @@ export default function HomeScreen() {
   const showCityInput = tripType === 'city';
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={styles.container}>
+      <LinearGradient
+        colors={[theme.backgroundGradientStart, theme.backgroundGradientEnd]}
+        style={StyleSheet.absoluteFill}
+      />
+      
       <Stack.Screen
         options={{
           headerShown: true,
           title: 'PackSmart',
           headerLargeTitle: true,
-          headerStyle: { backgroundColor: theme.card },
+          headerTransparent: true,
+          headerBlurEffect: colorScheme === 'dark' ? 'dark' : 'light',
+          headerStyle: { backgroundColor: 'transparent' },
           headerTintColor: theme.text,
           headerShadowVisible: false,
           headerRight: () => (
-            <View style={styles.headerButtons}>
-              <TouchableOpacity
-                onPress={() => setShowTemplates(true)}
-                style={styles.headerButton}
-              >
+            <TouchableOpacity
+              onPress={() => setShowTemplates(true)}
+              style={styles.headerButton}
+            >
+              <BlurView intensity={80} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={styles.headerButtonBlur}>
                 <IconSymbol
                   ios_icon_name="folder.fill"
                   android_material_icon_name="folder"
-                  size={24}
+                  size={20}
                   color={theme.primary}
                 />
-              </TouchableOpacity>
-            </View>
+              </BlurView>
+            </TouchableOpacity>
           ),
         }}
       />
@@ -314,267 +323,299 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Input Section */}
-        <View style={[styles.card, { backgroundColor: theme.card }, shadows.md]}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Trip Details</Text>
+        {/* Input Section - Glass Card */}
+        <BlurView intensity={80} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={[styles.glassCard, shadows.glass]}>
+          <View style={[styles.cardContent, { borderColor: theme.border }]}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Trip Details</Text>
 
-          {/* Travel Dates */}
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>Travel Dates (Optional)</Text>
-            <View style={styles.dateRow}>
-              <TouchableOpacity
-                style={[styles.dateButton, { backgroundColor: theme.background, borderColor: theme.border }]}
-                onPress={() => setShowStartDatePicker(true)}
-              >
-                <IconSymbol
-                  ios_icon_name="calendar"
-                  android_material_icon_name="calendar-today"
-                  size={18}
-                  color={theme.textSecondary}
-                />
-                <Text style={[styles.dateButtonText, { color: startDate ? theme.text : theme.textSecondary }]}>
-                  {startDateText}
-                </Text>
-              </TouchableOpacity>
-              <Text style={[styles.dateArrow, { color: theme.textSecondary }]}>→</Text>
-              <TouchableOpacity
-                style={[styles.dateButton, { backgroundColor: theme.background, borderColor: theme.border }]}
-                onPress={() => setShowEndDatePicker(true)}
-              >
-                <IconSymbol
-                  ios_icon_name="calendar"
-                  android_material_icon_name="calendar-today"
-                  size={18}
-                  color={theme.textSecondary}
-                />
-                <Text style={[styles.dateButtonText, { color: endDate ? theme.text : theme.textSecondary }]}>
-                  {endDateText}
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <Text style={[styles.helperText, { color: theme.textSecondary }]}>
-              Dates help predict weather and calculate trip duration
-            </Text>
-          </View>
-
-          {/* Days Input */}
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>Number of Days</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
-              value={days}
-              onChangeText={setDays}
-              keyboardType="number-pad"
-              placeholder="7"
-              placeholderTextColor={theme.textSecondary}
-            />
-          </View>
-
-          {/* Travel Type Selection */}
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>Travel Type</Text>
-            <View style={styles.optionsGrid}>
-              {travelTypeOptions.map(option => {
-                const isSelected = travelType === option.value;
-                return (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={[
-                      styles.optionButton,
-                      { backgroundColor: theme.background, borderColor: theme.border },
-                      isSelected && { backgroundColor: theme.primary, borderColor: theme.primary },
-                    ]}
-                    onPress={() => setTravelType(option.value)}
-                  >
-                    <IconSymbol
-                      ios_icon_name={option.icon}
-                      android_material_icon_name={option.icon}
-                      size={20}
-                      color={isSelected ? '#FFFFFF' : theme.text}
-                    />
-                    <Text style={[styles.optionText, { color: isSelected ? '#FFFFFF' : theme.text }]}>
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-
-          {/* Weather Selection */}
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>Weather</Text>
-            <View style={styles.optionsGrid}>
-              {weatherOptions.map(option => {
-                const isSelected = weather === option.value;
-                return (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={[
-                      styles.optionButton,
-                      { backgroundColor: theme.background, borderColor: theme.border },
-                      isSelected && { backgroundColor: theme.primary, borderColor: theme.primary },
-                    ]}
-                    onPress={() => setWeather(option.value)}
-                  >
-                    <IconSymbol
-                      ios_icon_name={option.icon}
-                      android_material_icon_name={option.icon}
-                      size={20}
-                      color={isSelected ? '#FFFFFF' : theme.text}
-                    />
-                    <Text style={[styles.optionText, { color: isSelected ? '#FFFFFF' : theme.text }]}>
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-
-          {/* Trip Type Selection */}
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>Trip Type</Text>
-            <View style={styles.optionsGrid}>
-              {tripTypeOptions.map(option => {
-                const isSelected = tripType === option.value;
-                return (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={[
-                      styles.optionButton,
-                      { backgroundColor: theme.background, borderColor: theme.border },
-                      isSelected && { backgroundColor: theme.primary, borderColor: theme.primary },
-                    ]}
-                    onPress={() => setTripType(option.value)}
-                  >
-                    <IconSymbol
-                      ios_icon_name={option.icon}
-                      android_material_icon_name={option.icon}
-                      size={20}
-                      color={isSelected ? '#FFFFFF' : theme.text}
-                    />
-                    <Text style={[styles.optionText, { color: isSelected ? '#FFFFFF' : theme.text }]}>
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-
-          {/* City Input (only for city trips) */}
-          {showCityInput && (
+            {/* Travel Dates */}
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.textSecondary }]}>
-                City (Optional)
-              </Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
-                value={city}
-                onChangeText={setCity}
-                placeholder="e.g., Paris, Tokyo, New York"
-                placeholderTextColor={theme.textSecondary}
-              />
-              <Text style={[styles.helperText, { color: theme.textSecondary }]}>
-                Get city-specific packing recommendations
-              </Text>
-            </View>
-          )}
-
-          {/* Packing Style Selection */}
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>Packing Style</Text>
-            <View style={styles.optionsGrid}>
-              {packingStyleOptions.map(option => {
-                const isSelected = packingStyle === option.value;
-                return (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={[
-                      styles.optionButton,
-                      { backgroundColor: theme.background, borderColor: theme.border },
-                      isSelected && { backgroundColor: theme.primary, borderColor: theme.primary },
-                    ]}
-                    onPress={() => setPackingStyle(option.value)}
-                  >
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Travel Dates</Text>
+              <View style={styles.dateRow}>
+                <TouchableOpacity
+                  style={[styles.dateButton, { borderColor: theme.border }]}
+                  onPress={() => setShowStartDatePicker(true)}
+                >
+                  <BlurView intensity={60} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={styles.dateButtonBlur}>
                     <IconSymbol
-                      ios_icon_name={option.icon}
-                      android_material_icon_name={option.icon}
-                      size={20}
-                      color={isSelected ? '#FFFFFF' : theme.text}
+                      ios_icon_name="calendar"
+                      android_material_icon_name="calendar-today"
+                      size={16}
+                      color={theme.textSecondary}
                     />
-                    <Text style={[styles.optionText, { color: isSelected ? '#FFFFFF' : theme.text }]}>
-                      {option.label}
+                    <Text style={[styles.dateButtonText, { color: startDate ? theme.text : theme.textSecondary }]}>
+                      {startDateText}
                     </Text>
-                  </TouchableOpacity>
-                );
-              })}
+                  </BlurView>
+                </TouchableOpacity>
+                <Text style={[styles.dateArrow, { color: theme.textSecondary }]}>→</Text>
+                <TouchableOpacity
+                  style={[styles.dateButton, { borderColor: theme.border }]}
+                  onPress={() => setShowEndDatePicker(true)}
+                >
+                  <BlurView intensity={60} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={styles.dateButtonBlur}>
+                    <IconSymbol
+                      ios_icon_name="calendar"
+                      android_material_icon_name="calendar-today"
+                      size={16}
+                      color={theme.textSecondary}
+                    />
+                    <Text style={[styles.dateButtonText, { color: endDate ? theme.text : theme.textSecondary }]}>
+                      {endDateText}
+                    </Text>
+                  </BlurView>
+                </TouchableOpacity>
+              </View>
             </View>
-            <Text style={[styles.helperText, { color: theme.textSecondary }]}>
-              Light: Minimal essentials • Normal: Balanced • Heavy: Extra comfort
-            </Text>
-          </View>
 
-          {/* Generate Button */}
-          <TouchableOpacity
-            style={[styles.generateButton, { backgroundColor: theme.primary }]}
-            onPress={handleGenerateList}
-          >
-            <IconSymbol
-              ios_icon_name="sparkles"
-              android_material_icon_name="auto-awesome"
-              size={20}
-              color="#FFFFFF"
-            />
-            <Text style={styles.generateButtonText}>Generate Packing List</Text>
-          </TouchableOpacity>
-        </View>
+            {/* Days Input */}
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Number of Days</Text>
+              <BlurView intensity={60} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={[styles.inputBlur, { borderColor: theme.border }]}>
+                <TextInput
+                  style={[styles.input, { color: theme.text }]}
+                  value={days}
+                  onChangeText={setDays}
+                  keyboardType="number-pad"
+                  placeholder="7"
+                  placeholderTextColor={theme.textSecondary}
+                />
+              </BlurView>
+            </View>
+
+            {/* Travel Type Selection */}
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Travel Type</Text>
+              <View style={styles.optionsGrid}>
+                {travelTypeOptions.map(option => {
+                  const isSelected = travelType === option.value;
+                  return (
+                    <TouchableOpacity
+                      key={option.value}
+                      style={[styles.optionButton, { borderColor: theme.border }]}
+                      onPress={() => setTravelType(option.value)}
+                    >
+                      <BlurView 
+                        intensity={isSelected ? 100 : 60} 
+                        tint={colorScheme === 'dark' ? 'dark' : 'light'} 
+                        style={[
+                          styles.optionButtonBlur,
+                          isSelected && { backgroundColor: theme.primaryGlass }
+                        ]}
+                      >
+                        <IconSymbol
+                          ios_icon_name={option.icon}
+                          android_material_icon_name={option.icon}
+                          size={18}
+                          color={isSelected ? theme.primary : theme.text}
+                        />
+                        <Text style={[styles.optionText, { color: isSelected ? theme.primary : theme.text }]}>
+                          {option.label}
+                        </Text>
+                      </BlurView>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* Weather Selection */}
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Weather</Text>
+              <View style={styles.optionsGrid}>
+                {weatherOptions.map(option => {
+                  const isSelected = weather === option.value;
+                  return (
+                    <TouchableOpacity
+                      key={option.value}
+                      style={[styles.optionButton, { borderColor: theme.border }]}
+                      onPress={() => setWeather(option.value)}
+                    >
+                      <BlurView 
+                        intensity={isSelected ? 100 : 60} 
+                        tint={colorScheme === 'dark' ? 'dark' : 'light'} 
+                        style={[
+                          styles.optionButtonBlur,
+                          isSelected && { backgroundColor: theme.primaryGlass }
+                        ]}
+                      >
+                        <IconSymbol
+                          ios_icon_name={option.icon}
+                          android_material_icon_name={option.icon}
+                          size={18}
+                          color={isSelected ? theme.primary : theme.text}
+                        />
+                        <Text style={[styles.optionText, { color: isSelected ? theme.primary : theme.text }]}>
+                          {option.label}
+                        </Text>
+                      </BlurView>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* Trip Type Selection */}
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Trip Type</Text>
+              <View style={styles.optionsGrid}>
+                {tripTypeOptions.map(option => {
+                  const isSelected = tripType === option.value;
+                  return (
+                    <TouchableOpacity
+                      key={option.value}
+                      style={[styles.optionButton, { borderColor: theme.border }]}
+                      onPress={() => setTripType(option.value)}
+                    >
+                      <BlurView 
+                        intensity={isSelected ? 100 : 60} 
+                        tint={colorScheme === 'dark' ? 'dark' : 'light'} 
+                        style={[
+                          styles.optionButtonBlur,
+                          isSelected && { backgroundColor: theme.primaryGlass }
+                        ]}
+                      >
+                        <IconSymbol
+                          ios_icon_name={option.icon}
+                          android_material_icon_name={option.icon}
+                          size={18}
+                          color={isSelected ? theme.primary : theme.text}
+                        />
+                        <Text style={[styles.optionText, { color: isSelected ? theme.primary : theme.text }]}>
+                          {option.label}
+                        </Text>
+                      </BlurView>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* City Input (only for city trips) */}
+            {showCityInput && (
+              <View style={styles.inputGroup}>
+                <Text style={[styles.label, { color: theme.textSecondary }]}>City</Text>
+                <BlurView intensity={60} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={[styles.inputBlur, { borderColor: theme.border }]}>
+                  <TextInput
+                    style={[styles.input, { color: theme.text }]}
+                    value={city}
+                    onChangeText={setCity}
+                    placeholder="e.g., Paris, Tokyo"
+                    placeholderTextColor={theme.textSecondary}
+                  />
+                </BlurView>
+              </View>
+            )}
+
+            {/* Packing Style Selection */}
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>Packing Style</Text>
+              <View style={styles.optionsGrid}>
+                {packingStyleOptions.map(option => {
+                  const isSelected = packingStyle === option.value;
+                  return (
+                    <TouchableOpacity
+                      key={option.value}
+                      style={[styles.optionButton, { borderColor: theme.border }]}
+                      onPress={() => setPackingStyle(option.value)}
+                    >
+                      <BlurView 
+                        intensity={isSelected ? 100 : 60} 
+                        tint={colorScheme === 'dark' ? 'dark' : 'light'} 
+                        style={[
+                          styles.optionButtonBlur,
+                          isSelected && { backgroundColor: theme.primaryGlass }
+                        ]}
+                      >
+                        <IconSymbol
+                          ios_icon_name={option.icon}
+                          android_material_icon_name={option.icon}
+                          size={18}
+                          color={isSelected ? theme.primary : theme.text}
+                        />
+                        <Text style={[styles.optionText, { color: isSelected ? theme.primary : theme.text }]}>
+                          {option.label}
+                        </Text>
+                      </BlurView>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* Generate Button */}
+            <TouchableOpacity
+              style={styles.generateButton}
+              onPress={handleGenerateList}
+            >
+              <LinearGradient
+                colors={[theme.primary, theme.secondary]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.generateButtonGradient}
+              >
+                <IconSymbol
+                  ios_icon_name="sparkles"
+                  android_material_icon_name="auto-awesome"
+                  size={20}
+                  color="#FFFFFF"
+                />
+                <Text style={styles.generateButtonText}>Generate List</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </BlurView>
 
         {/* Packing List */}
         {packingItems.length > 0 && (
           <React.Fragment>
             {/* Progress Header */}
-            <View style={[styles.progressCard, { backgroundColor: theme.card }, shadows.md]}>
-              <View style={styles.progressHeader}>
-                <Text style={[styles.progressTitle, { color: theme.text }]}>Your Packing List</Text>
-                <Text style={[styles.progressCount, { color: theme.primary }]}>{progressText}</Text>
-              </View>
-              <View style={[styles.progressBar, { backgroundColor: theme.border }]}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    { backgroundColor: theme.primary, width: `${(checkedCount / totalCount) * 100}%` },
-                  ]}
-                />
-              </View>
-              <View style={styles.actionButtons}>
-                <TouchableOpacity
-                  style={[styles.actionButton, { backgroundColor: theme.secondary }]}
-                  onPress={() => setShowAddCustomItem(true)}
-                >
-                  <IconSymbol
-                    ios_icon_name="plus"
-                    android_material_icon_name="add"
-                    size={18}
-                    color="#FFFFFF"
+            <BlurView intensity={80} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={[styles.glassCard, shadows.glass]}>
+              <View style={[styles.cardContent, { borderColor: theme.border }]}>
+                <View style={styles.progressHeader}>
+                  <Text style={[styles.progressTitle, { color: theme.text }]}>Your List</Text>
+                  <Text style={[styles.progressCount, { color: theme.primary }]}>{progressText}</Text>
+                </View>
+                <View style={[styles.progressBarContainer, { backgroundColor: theme.border }]}>
+                  <LinearGradient
+                    colors={[theme.primary, theme.secondary]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={[styles.progressFill, { width: `${(checkedCount / totalCount) * 100}%` }]}
                   />
-                  <Text style={styles.actionButtonText}>Add Custom Item</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.actionButton, { backgroundColor: theme.secondary }]}
-                  onPress={() => setShowSaveModal(true)}
-                >
-                  <IconSymbol
-                    ios_icon_name="bookmark.fill"
-                    android_material_icon_name="bookmark"
-                    size={18}
-                    color="#FFFFFF"
-                  />
-                  <Text style={styles.actionButtonText}>Save Template</Text>
-                </TouchableOpacity>
+                </View>
+                <View style={styles.actionButtons}>
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => setShowAddCustomItem(true)}
+                  >
+                    <BlurView intensity={80} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={[styles.actionButtonBlur, { backgroundColor: theme.secondaryGlass }]}>
+                      <IconSymbol
+                        ios_icon_name="plus"
+                        android_material_icon_name="add"
+                        size={16}
+                        color={theme.secondary}
+                      />
+                      <Text style={[styles.actionButtonText, { color: theme.secondary }]}>Add Item</Text>
+                    </BlurView>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => setShowSaveModal(true)}
+                  >
+                    <BlurView intensity={80} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={[styles.actionButtonBlur, { backgroundColor: theme.accentGlass }]}>
+                      <IconSymbol
+                        ios_icon_name="bookmark.fill"
+                        android_material_icon_name="bookmark"
+                        size={16}
+                        color={theme.accent}
+                      />
+                      <Text style={[styles.actionButtonText, { color: theme.accent }]}>Save</Text>
+                    </BlurView>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
+            </BlurView>
 
             {/* Categories */}
             {categories.map(category => {
@@ -585,87 +626,93 @@ export default function HomeScreen() {
               const categoryProgressText = `${categoryCheckedCount}/${categoryTotalCount}`;
 
               return (
-                <View key={category} style={[styles.categoryCard, { backgroundColor: theme.card }, shadows.sm]}>
-                  <TouchableOpacity
-                    style={styles.categoryHeader}
-                    onPress={() => toggleCategory(category)}
-                  >
-                    <View style={styles.categoryTitleRow}>
-                      <IconSymbol
-                        ios_icon_name={isCollapsed ? 'chevron.right' : 'chevron.down'}
-                        android_material_icon_name={isCollapsed ? 'chevron-right' : 'expand-more'}
-                        size={20}
-                        color={theme.textSecondary}
-                      />
-                      <Text style={[styles.categoryTitle, { color: theme.text }]}>
-                        {getCategoryDisplayName(category)}
+                <BlurView key={category} intensity={70} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={[styles.categoryCard, shadows.sm]}>
+                  <View style={[styles.categoryCardContent, { borderColor: theme.border }]}>
+                    <TouchableOpacity
+                      style={styles.categoryHeader}
+                      onPress={() => toggleCategory(category)}
+                    >
+                      <View style={styles.categoryTitleRow}>
+                        <IconSymbol
+                          ios_icon_name={isCollapsed ? 'chevron.right' : 'chevron.down'}
+                          android_material_icon_name={isCollapsed ? 'chevron-right' : 'expand-more'}
+                          size={18}
+                          color={theme.textSecondary}
+                        />
+                        <Text style={[styles.categoryTitle, { color: theme.text }]}>
+                          {getCategoryDisplayName(category)}
+                        </Text>
+                      </View>
+                      <Text style={[styles.categoryCount, { color: theme.textSecondary }]}>
+                        {categoryProgressText}
                       </Text>
-                    </View>
-                    <Text style={[styles.categoryCount, { color: theme.textSecondary }]}>
-                      {categoryProgressText}
-                    </Text>
-                  </TouchableOpacity>
+                    </TouchableOpacity>
 
-                  {!isCollapsed && (
-                    <View style={styles.itemsList}>
-                      {categoryItems.map(item => (
-                        <View
-                          key={item.id}
-                          style={[styles.itemRow, { borderBottomColor: theme.border }]}
-                        >
-                          <TouchableOpacity
-                            style={styles.itemContent}
-                            onPress={() => toggleItemChecked(item.id)}
+                    {!isCollapsed && (
+                      <View style={styles.itemsList}>
+                        {categoryItems.map(item => (
+                          <View
+                            key={item.id}
+                            style={[styles.itemRow, { borderBottomColor: theme.border }]}
                           >
-                            <View
-                              style={[
-                                styles.checkbox,
-                                { borderColor: theme.border },
-                                item.checked && { backgroundColor: theme.primary, borderColor: theme.primary },
-                              ]}
-                            >
-                              {item.checked && (
-                                <IconSymbol
-                                  ios_icon_name="checkmark"
-                                  android_material_icon_name="check"
-                                  size={16}
-                                  color="#FFFFFF"
-                                />
-                              )}
-                            </View>
-                            <Text
-                              style={[
-                                styles.itemText,
-                                { color: theme.text },
-                                item.checked && styles.itemTextChecked,
-                              ]}
-                            >
-                              {item.name}
-                            </Text>
-                            {item.isCustom && (
-                              <View style={[styles.customBadge, { backgroundColor: theme.primary }]}>
-                                <Text style={styles.customBadgeText}>Custom</Text>
-                              </View>
-                            )}
-                          </TouchableOpacity>
-                          {item.isCustom && (
                             <TouchableOpacity
-                              style={styles.deleteItemButton}
-                              onPress={() => handleDeleteCustomItem(item.id)}
+                              style={styles.itemContent}
+                              onPress={() => toggleItemChecked(item.id)}
                             >
-                              <IconSymbol
-                                ios_icon_name="trash"
-                                android_material_icon_name="delete"
-                                size={18}
-                                color={theme.error}
-                              />
+                              <View
+                                style={[
+                                  styles.checkbox,
+                                  { borderColor: theme.border },
+                                  item.checked && { 
+                                    backgroundColor: theme.primaryGlass, 
+                                    borderColor: theme.primary,
+                                    borderWidth: 2,
+                                  },
+                                ]}
+                              >
+                                {item.checked && (
+                                  <IconSymbol
+                                    ios_icon_name="checkmark"
+                                    android_material_icon_name="check"
+                                    size={14}
+                                    color={theme.primary}
+                                  />
+                                )}
+                              </View>
+                              <Text
+                                style={[
+                                  styles.itemText,
+                                  { color: theme.text },
+                                  item.checked && { opacity: 0.5, textDecorationLine: 'line-through' },
+                                ]}
+                              >
+                                {item.name}
+                              </Text>
+                              {item.isCustom && (
+                                <View style={[styles.customBadge, { backgroundColor: theme.accentGlass }]}>
+                                  <Text style={[styles.customBadgeText, { color: theme.accent }]}>Custom</Text>
+                                </View>
+                              )}
                             </TouchableOpacity>
-                          )}
-                        </View>
-                      ))}
-                    </View>
-                  )}
-                </View>
+                            {item.isCustom && (
+                              <TouchableOpacity
+                                style={styles.deleteItemButton}
+                                onPress={() => handleDeleteCustomItem(item.id)}
+                              >
+                                <IconSymbol
+                                  ios_icon_name="trash"
+                                  android_material_icon_name="delete"
+                                  size={16}
+                                  color={theme.error}
+                                />
+                              </TouchableOpacity>
+                            )}
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                </BlurView>
               );
             })}
           </React.Fragment>
@@ -682,7 +729,7 @@ export default function HomeScreen() {
             />
             <Text style={[styles.emptyTitle, { color: theme.text }]}>Ready to Pack?</Text>
             <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
-              Enter your trip details above and generate your personalized packing list
+              Enter your trip details and generate your personalized packing list
             </Text>
           </View>
         )}
@@ -715,58 +762,76 @@ export default function HomeScreen() {
         transparent={true}
         onRequestClose={() => setShowAddCustomItem(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.card }, shadows.lg]}>
-            <Text style={[styles.modalTitle, { color: theme.text }]}>Add Custom Item</Text>
-            <TextInput
-              style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
-              value={customItemName}
-              onChangeText={setCustomItemName}
-              placeholder="Item name"
-              placeholderTextColor={theme.textSecondary}
-              autoFocus
-            />
-            <Text style={[styles.modalLabel, { color: theme.textSecondary }]}>Category</Text>
-            <View style={styles.categoryOptionsGrid}>
-              {categoryOptions.map(option => {
-                const isSelected = customItemCategory === option.value;
-                return (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={[
-                      styles.categoryOptionButton,
-                      { backgroundColor: theme.background, borderColor: theme.border },
-                      isSelected && { backgroundColor: theme.primary, borderColor: theme.primary },
-                    ]}
-                    onPress={() => setCustomItemCategory(option.value)}
+        <BlurView intensity={90} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={styles.modalOverlay}>
+          <BlurView intensity={100} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={[styles.modalContent, shadows.lg]}>
+            <View style={[styles.modalInner, { borderColor: theme.border }]}>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>Add Custom Item</Text>
+              <BlurView intensity={60} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={[styles.inputBlur, { borderColor: theme.border }]}>
+                <TextInput
+                  style={[styles.input, { color: theme.text }]}
+                  value={customItemName}
+                  onChangeText={setCustomItemName}
+                  placeholder="Item name"
+                  placeholderTextColor={theme.textSecondary}
+                  autoFocus
+                />
+              </BlurView>
+              <Text style={[styles.modalLabel, { color: theme.textSecondary }]}>Category</Text>
+              <View style={styles.categoryOptionsGrid}>
+                {categoryOptions.map(option => {
+                  const isSelected = customItemCategory === option.value;
+                  return (
+                    <TouchableOpacity
+                      key={option.value}
+                      style={[styles.categoryOptionButton, { borderColor: theme.border }]}
+                      onPress={() => setCustomItemCategory(option.value)}
+                    >
+                      <BlurView 
+                        intensity={isSelected ? 100 : 60} 
+                        tint={colorScheme === 'dark' ? 'dark' : 'light'} 
+                        style={[
+                          styles.categoryOptionBlur,
+                          isSelected && { backgroundColor: theme.primaryGlass }
+                        ]}
+                      >
+                        <Text style={[styles.categoryOptionText, { color: isSelected ? theme.primary : theme.text }]}>
+                          {option.label}
+                        </Text>
+                      </BlurView>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={() => {
+                    setShowAddCustomItem(false);
+                    setCustomItemName('');
+                    setCustomItemCategory('misc');
+                  }}
+                >
+                  <BlurView intensity={80} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={styles.modalButtonBlur}>
+                    <Text style={[styles.modalButtonText, { color: theme.text }]}>Cancel</Text>
+                  </BlurView>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={handleAddCustomItem}
+                >
+                  <LinearGradient
+                    colors={[theme.primary, theme.secondary]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.modalButtonGradient}
                   >
-                    <Text style={[styles.categoryOptionText, { color: isSelected ? '#FFFFFF' : theme.text }]}>
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+                    <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>Add</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
             </View>
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: theme.background }]}
-                onPress={() => {
-                  setShowAddCustomItem(false);
-                  setCustomItemName('');
-                  setCustomItemCategory('misc');
-                }}
-              >
-                <Text style={[styles.modalButtonText, { color: theme.text }]}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: theme.primary }]}
-                onPress={handleAddCustomItem}
-              >
-                <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>Add</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
+          </BlurView>
+        </BlurView>
       </Modal>
 
       {/* Templates Modal */}
@@ -776,9 +841,12 @@ export default function HomeScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowTemplates(false)}
       >
-        <View style={[styles.fullModalContainer, { backgroundColor: theme.background }]}>
-          <View style={[styles.fullModalHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-            <Text style={[styles.fullModalTitle, { color: theme.text }]}>Saved Templates</Text>
+        <LinearGradient
+          colors={[theme.backgroundGradientStart, theme.backgroundGradientEnd]}
+          style={styles.fullModalContainer}
+        >
+          <BlurView intensity={90} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={[styles.fullModalHeader, { borderBottomColor: theme.border }]}>
+            <Text style={[styles.fullModalTitle, { color: theme.text }]}>Templates</Text>
             <TouchableOpacity onPress={() => setShowTemplates(false)}>
               <IconSymbol
                 ios_icon_name="xmark"
@@ -787,7 +855,7 @@ export default function HomeScreen() {
                 color={theme.text}
               />
             </TouchableOpacity>
-          </View>
+          </BlurView>
 
           <ScrollView style={styles.fullModalContent}>
             {templates.length === 0 ? (
@@ -798,7 +866,7 @@ export default function HomeScreen() {
                   size={64}
                   color={theme.textSecondary}
                 />
-                <Text style={[styles.emptyTitle, { color: theme.text }]}>No Templates Yet</Text>
+                <Text style={[styles.emptyTitle, { color: theme.text }]}>No Templates</Text>
                 <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
                   Save your packing lists as templates for quick access
                 </Text>
@@ -811,58 +879,60 @@ export default function HomeScreen() {
                 const packingStyleLabel = template.packingStyle.charAt(0).toUpperCase() + template.packingStyle.slice(1);
 
                 return (
-                  <View key={template.id} style={[styles.templateCard, { backgroundColor: theme.card }, shadows.sm]}>
-                    <TouchableOpacity
-                      style={styles.templateContent}
-                      onPress={() => handleLoadTemplate(template)}
-                    >
-                      <View style={styles.templateInfo}>
+                  <BlurView key={template.id} intensity={70} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={[styles.templateCard, shadows.sm]}>
+                    <View style={[styles.templateCardContent, { borderColor: theme.border }]}>
+                      <TouchableOpacity
+                        style={styles.templateContent}
+                        onPress={() => handleLoadTemplate(template)}
+                      >
                         <Text style={[styles.templateName, { color: theme.text }]}>{template.name}</Text>
-                        <Text style={[styles.templateDetails, { color: theme.textSecondary }]}>
-                          {template.days}
-                        </Text>
-                        <Text style={[styles.templateDetails, { color: theme.textSecondary }]}>
-                          {' '}days • 
-                        </Text>
-                        <Text style={[styles.templateDetails, { color: theme.textSecondary }]}>
-                          {travelTypeLabel}
-                        </Text>
-                        <Text style={[styles.templateDetails, { color: theme.textSecondary }]}>
-                          {' '}• 
-                        </Text>
-                        <Text style={[styles.templateDetails, { color: theme.textSecondary }]}>
-                          {packingStyleLabel}
-                        </Text>
-                        {template.city && (
-                          <React.Fragment>
-                            <Text style={[styles.templateDetails, { color: theme.textSecondary }]}>
-                              {' '}• 
-                            </Text>
-                            <Text style={[styles.templateDetails, { color: theme.textSecondary }]}>
-                              {template.city}
-                            </Text>
-                          </React.Fragment>
-                        )}
+                        <View style={styles.templateInfo}>
+                          <Text style={[styles.templateDetails, { color: theme.textSecondary }]}>
+                            {template.days}
+                          </Text>
+                          <Text style={[styles.templateDetails, { color: theme.textSecondary }]}>
+                            {' '}days • 
+                          </Text>
+                          <Text style={[styles.templateDetails, { color: theme.textSecondary }]}>
+                            {travelTypeLabel}
+                          </Text>
+                          <Text style={[styles.templateDetails, { color: theme.textSecondary }]}>
+                            {' '}• 
+                          </Text>
+                          <Text style={[styles.templateDetails, { color: theme.textSecondary }]}>
+                            {packingStyleLabel}
+                          </Text>
+                          {template.city && (
+                            <React.Fragment>
+                              <Text style={[styles.templateDetails, { color: theme.textSecondary }]}>
+                                {' '}• 
+                              </Text>
+                              <Text style={[styles.templateDetails, { color: theme.textSecondary }]}>
+                                {template.city}
+                              </Text>
+                            </React.Fragment>
+                          )}
+                        </View>
                         <Text style={[styles.templateCount, { color: theme.primary }]}>{templateProgressText}</Text>
-                      </View>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.deleteButton}
-                      onPress={() => handleDeleteTemplate(template.id)}
-                    >
-                      <IconSymbol
-                        ios_icon_name="trash"
-                        android_material_icon_name="delete"
-                        size={20}
-                        color={theme.error}
-                      />
-                    </TouchableOpacity>
-                  </View>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => handleDeleteTemplate(template.id)}
+                      >
+                        <IconSymbol
+                          ios_icon_name="trash"
+                          android_material_icon_name="delete"
+                          size={18}
+                          color={theme.error}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </BlurView>
                 );
               })
             )}
           </ScrollView>
-        </View>
+        </LinearGradient>
       </Modal>
 
       {/* Save Template Modal */}
@@ -872,36 +942,49 @@ export default function HomeScreen() {
         transparent={true}
         onRequestClose={() => setShowSaveModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.card }, shadows.lg]}>
-            <Text style={[styles.modalTitle, { color: theme.text }]}>Save Template</Text>
-            <TextInput
-              style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
-              value={templateName}
-              onChangeText={setTemplateName}
-              placeholder="Enter template name"
-              placeholderTextColor={theme.textSecondary}
-              autoFocus
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: theme.background }]}
-                onPress={() => {
-                  setShowSaveModal(false);
-                  setTemplateName('');
-                }}
-              >
-                <Text style={[styles.modalButtonText, { color: theme.text }]}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: theme.primary }]}
-                onPress={handleSaveTemplate}
-              >
-                <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>Save</Text>
-              </TouchableOpacity>
+        <BlurView intensity={90} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={styles.modalOverlay}>
+          <BlurView intensity={100} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={[styles.modalContent, shadows.lg]}>
+            <View style={[styles.modalInner, { borderColor: theme.border }]}>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>Save Template</Text>
+              <BlurView intensity={60} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={[styles.inputBlur, { borderColor: theme.border }]}>
+                <TextInput
+                  style={[styles.input, { color: theme.text }]}
+                  value={templateName}
+                  onChangeText={setTemplateName}
+                  placeholder="Template name"
+                  placeholderTextColor={theme.textSecondary}
+                  autoFocus
+                />
+              </BlurView>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={() => {
+                    setShowSaveModal(false);
+                    setTemplateName('');
+                  }}
+                >
+                  <BlurView intensity={80} tint={colorScheme === 'dark' ? 'dark' : 'light'} style={styles.modalButtonBlur}>
+                    <Text style={[styles.modalButtonText, { color: theme.text }]}>Cancel</Text>
+                  </BlurView>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={handleSaveTemplate}
+                >
+                  <LinearGradient
+                    colors={[theme.primary, theme.secondary]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.modalButtonGradient}
+                  >
+                    <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>Save</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        </View>
+          </BlurView>
+        </BlurView>
       </Modal>
     </View>
   );
@@ -915,26 +998,34 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: spacing.md,
-    paddingBottom: 100,
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginRight: spacing.sm,
+    padding: spacing.lg,
+    paddingTop: 120,
+    paddingBottom: 120,
   },
   headerButton: {
-    padding: spacing.xs,
+    marginRight: spacing.sm,
   },
-  card: {
-    borderRadius: borderRadius.lg,
+  headerButtonBlur: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  glassCard: {
+    borderRadius: borderRadius.xl,
+    marginBottom: spacing.lg,
+    overflow: 'hidden',
+  },
+  cardContent: {
     padding: spacing.lg,
-    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderRadius: borderRadius.xl,
   },
   sectionTitle: {
     ...typography.h3,
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   inputGroup: {
     marginBottom: spacing.lg,
@@ -943,17 +1034,17 @@ const styles = StyleSheet.create({
     ...typography.bodySmall,
     marginBottom: spacing.sm,
     fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  inputBlur: {
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    borderWidth: 1,
   },
   input: {
-    borderWidth: 1,
-    borderRadius: borderRadius.md,
     padding: spacing.md,
     ...typography.body,
-  },
-  helperText: {
-    ...typography.bodySmall,
-    marginTop: spacing.xs,
-    fontStyle: 'italic',
   },
   dateRow: {
     flexDirection: 'row',
@@ -962,12 +1053,15 @@ const styles = StyleSheet.create({
   },
   dateButton: {
     flex: 1,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    borderWidth: 1,
+  },
+  dateButtonBlur: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
     padding: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
   },
   dateButtonText: {
     ...typography.bodySmall,
@@ -983,51 +1077,52 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   optionButton: {
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    borderWidth: 1,
+  },
+  optionButtonBlur: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
   },
   optionText: {
     ...typography.bodySmall,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   generateButton: {
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    marginTop: spacing.sm,
+  },
+  generateButtonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
     padding: spacing.md,
-    borderRadius: borderRadius.md,
-    marginTop: spacing.sm,
   },
   generateButtonText: {
     color: '#FFFFFF',
     ...typography.body,
-    fontWeight: '600',
-  },
-  progressCard: {
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
+    fontWeight: '700',
   },
   progressHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   progressTitle: {
     ...typography.h3,
   },
   progressCount: {
     ...typography.body,
-    fontWeight: '600',
+    fontWeight: '700',
   },
-  progressBar: {
+  progressBarContainer: {
     height: 8,
     borderRadius: borderRadius.full,
     overflow: 'hidden',
@@ -1043,22 +1138,28 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+  },
+  actionButtonBlur: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xs,
     padding: spacing.sm,
-    borderRadius: borderRadius.md,
   },
   actionButtonText: {
-    color: '#FFFFFF',
     ...typography.bodySmall,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   categoryCard: {
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
     marginBottom: spacing.sm,
     overflow: 'hidden',
+  },
+  categoryCardContent: {
+    borderWidth: 1,
+    borderRadius: borderRadius.lg,
   },
   categoryHeader: {
     flexDirection: 'row',
@@ -1077,9 +1178,11 @@ const styles = StyleSheet.create({
   },
   categoryCount: {
     ...typography.bodySmall,
+    fontWeight: '600',
   },
   itemsList: {
     paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
   },
   itemRow: {
     flexDirection: 'row',
@@ -1096,8 +1199,8 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 24,
     height: 24,
-    borderRadius: 6,
-    borderWidth: 2,
+    borderRadius: 8,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1105,19 +1208,16 @@ const styles = StyleSheet.create({
     ...typography.body,
     flex: 1,
   },
-  itemTextChecked: {
-    textDecorationLine: 'line-through',
-    opacity: 0.5,
-  },
   customBadge: {
-    paddingHorizontal: spacing.xs,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: borderRadius.sm,
   },
   customBadgeText: {
-    color: '#FFFFFF',
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   deleteItemButton: {
     padding: spacing.xs,
@@ -1136,10 +1236,10 @@ const styles = StyleSheet.create({
   emptySubtitle: {
     ...typography.body,
     textAlign: 'center',
+    opacity: 0.8,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.lg,
@@ -1147,8 +1247,13 @@ const styles = StyleSheet.create({
   modalContent: {
     width: '100%',
     maxWidth: 400,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+  },
+  modalInner: {
     padding: spacing.lg,
+    borderWidth: 1,
+    borderRadius: borderRadius.xl,
   },
   modalTitle: {
     ...typography.h3,
@@ -1159,12 +1264,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     marginBottom: spacing.sm,
     fontWeight: '600',
-  },
-  modalInput: {
-    borderWidth: 1,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    ...typography.body,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   categoryOptionsGrid: {
     flexDirection: 'row',
@@ -1173,14 +1274,17 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   categoryOptionButton: {
+    borderRadius: borderRadius.sm,
+    overflow: 'hidden',
+    borderWidth: 1,
+  },
+  categoryOptionBlur: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
-    borderRadius: borderRadius.sm,
-    borderWidth: 1,
   },
   categoryOptionText: {
     ...typography.bodySmall,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   modalButtons: {
     flexDirection: 'row',
@@ -1189,13 +1293,20 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     flex: 1,
-    padding: spacing.md,
     borderRadius: borderRadius.md,
+    overflow: 'hidden',
+  },
+  modalButtonBlur: {
+    padding: spacing.md,
+    alignItems: 'center',
+  },
+  modalButtonGradient: {
+    padding: spacing.md,
     alignItems: 'center',
   },
   modalButtonText: {
     ...typography.body,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   fullModalContainer: {
     flex: 1,
@@ -1212,7 +1323,7 @@ const styles = StyleSheet.create({
   },
   fullModalContent: {
     flex: 1,
-    padding: spacing.md,
+    padding: spacing.lg,
   },
   emptyTemplates: {
     alignItems: 'center',
@@ -1221,25 +1332,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   templateCard: {
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
     marginBottom: spacing.sm,
+    overflow: 'hidden',
+  },
+  templateCardContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: borderRadius.lg,
   },
   templateContent: {
     flex: 1,
     padding: spacing.md,
   },
+  templateName: {
+    ...typography.body,
+    fontWeight: '600',
+    marginBottom: spacing.xs,
+  },
   templateInfo: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
-    gap: spacing.xs,
-  },
-  templateName: {
-    ...typography.body,
-    fontWeight: '600',
-    width: '100%',
     marginBottom: spacing.xs,
   },
   templateDetails: {
