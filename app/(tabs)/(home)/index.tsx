@@ -15,7 +15,7 @@ import {
 import { Stack } from 'expo-router';
 import { colors, spacing, borderRadius, typography, shadows } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
-import { WeatherType, TripType, PackingItem, TripTemplate } from '@/types/packing';
+import { WeatherType, TripType, TravelType, PackingStyle, PackingItem, TripTemplate } from '@/types/packing';
 import { generatePackingList, groupItemsByCategory, getCategoryDisplayName } from '@/utils/packingGenerator';
 import { saveTemplates, loadTemplates, deleteTemplate } from '@/utils/storage';
 import * as Haptics from 'expo-haptics';
@@ -28,6 +28,9 @@ export default function HomeScreen() {
   const [days, setDays] = useState('7');
   const [weather, setWeather] = useState<WeatherType>('warm');
   const [tripType, setTripType] = useState<TripType>('city');
+  const [travelType, setTravelType] = useState<TravelType>('local');
+  const [packingStyle, setPackingStyle] = useState<PackingStyle>('normal');
+  const [city, setCity] = useState('');
 
   // Packing list state
   const [packingItems, setPackingItems] = useState<PackingItem[]>([]);
@@ -51,11 +54,18 @@ export default function HomeScreen() {
   };
 
   const handleGenerateList = () => {
-    console.log('Generating packing list with params:', { days, weather, tripType });
+    console.log('Generating packing list with params:', { days, weather, tripType, travelType, packingStyle, city });
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
     const daysNum = parseInt(days) || 7;
-    const items = generatePackingList({ days: daysNum, weather, tripType });
+    const items = generatePackingList({ 
+      days: daysNum, 
+      weather, 
+      tripType, 
+      travelType, 
+      packingStyle,
+      city: tripType === 'city' ? city : undefined
+    });
     setPackingItems(items);
     setCollapsedCategories(new Set());
     console.log('Generated items count:', items.length);
@@ -103,6 +113,9 @@ export default function HomeScreen() {
       days: parseInt(days) || 7,
       weather,
       tripType,
+      travelType,
+      packingStyle,
+      city: tripType === 'city' ? city : undefined,
       items: packingItems,
       createdAt: new Date().toISOString(),
     };
@@ -122,6 +135,9 @@ export default function HomeScreen() {
     setDays(template.days.toString());
     setWeather(template.weather);
     setTripType(template.tripType);
+    setTravelType(template.travelType);
+    setPackingStyle(template.packingStyle);
+    setCity(template.city || '');
     setPackingItems(template.items);
     setShowTemplates(false);
     setCollapsedCategories(new Set());
@@ -157,6 +173,19 @@ export default function HomeScreen() {
     { value: 'city', label: 'City', icon: 'location-city' },
     { value: 'winter', label: 'Winter', icon: 'ac-unit' },
   ];
+
+  const travelTypeOptions: { value: TravelType; label: string; icon: string }[] = [
+    { value: 'local', label: 'Local', icon: 'home' },
+    { value: 'international', label: 'International', icon: 'flight' },
+  ];
+
+  const packingStyleOptions: { value: PackingStyle; label: string; icon: string }[] = [
+    { value: 'light', label: 'Light', icon: 'luggage' },
+    { value: 'normal', label: 'Normal', icon: 'luggage' },
+    { value: 'heavy', label: 'Heavy', icon: 'luggage' },
+  ];
+
+  const showCityInput = tripType === 'city';
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -205,6 +234,37 @@ export default function HomeScreen() {
               placeholder="7"
               placeholderTextColor={theme.textSecondary}
             />
+          </View>
+
+          {/* Travel Type Selection */}
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Travel Type</Text>
+            <View style={styles.optionsGrid}>
+              {travelTypeOptions.map(option => {
+                const isSelected = travelType === option.value;
+                return (
+                  <TouchableOpacity
+                    key={option.value}
+                    style={[
+                      styles.optionButton,
+                      { backgroundColor: theme.background, borderColor: theme.border },
+                      isSelected && { backgroundColor: theme.primary, borderColor: theme.primary },
+                    ]}
+                    onPress={() => setTravelType(option.value)}
+                  >
+                    <IconSymbol
+                      ios_icon_name={option.icon}
+                      android_material_icon_name={option.icon}
+                      size={20}
+                      color={isSelected ? '#FFFFFF' : theme.text}
+                    />
+                    <Text style={[styles.optionText, { color: isSelected ? '#FFFFFF' : theme.text }]}>
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
 
           {/* Weather Selection */}
@@ -267,6 +327,59 @@ export default function HomeScreen() {
                 );
               })}
             </View>
+          </View>
+
+          {/* City Input (only for city trips) */}
+          {showCityInput && (
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: theme.textSecondary }]}>
+                City (Optional)
+              </Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+                value={city}
+                onChangeText={setCity}
+                placeholder="e.g., Paris, Tokyo, New York"
+                placeholderTextColor={theme.textSecondary}
+              />
+              <Text style={[styles.helperText, { color: theme.textSecondary }]}>
+                Get city-specific packing recommendations
+              </Text>
+            </View>
+          )}
+
+          {/* Packing Style Selection */}
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Packing Style</Text>
+            <View style={styles.optionsGrid}>
+              {packingStyleOptions.map(option => {
+                const isSelected = packingStyle === option.value;
+                return (
+                  <TouchableOpacity
+                    key={option.value}
+                    style={[
+                      styles.optionButton,
+                      { backgroundColor: theme.background, borderColor: theme.border },
+                      isSelected && { backgroundColor: theme.primary, borderColor: theme.primary },
+                    ]}
+                    onPress={() => setPackingStyle(option.value)}
+                  >
+                    <IconSymbol
+                      ios_icon_name={option.icon}
+                      android_material_icon_name={option.icon}
+                      size={20}
+                      color={isSelected ? '#FFFFFF' : theme.text}
+                    />
+                    <Text style={[styles.optionText, { color: isSelected ? '#FFFFFF' : theme.text }]}>
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <Text style={[styles.helperText, { color: theme.textSecondary }]}>
+              Light: Minimal essentials • Normal: Balanced • Heavy: Extra comfort
+            </Text>
           </View>
 
           {/* Generate Button */}
@@ -443,9 +556,10 @@ export default function HomeScreen() {
               </View>
             ) : (
               templates.map(template => {
-                const templateCheckedCount = template.items.filter(item => item.checked).length;
                 const templateTotalCount = template.items.length;
                 const templateProgressText = `${templateTotalCount} items`;
+                const travelTypeLabel = template.travelType === 'international' ? 'International' : 'Local';
+                const packingStyleLabel = template.packingStyle.charAt(0).toUpperCase() + template.packingStyle.slice(1);
 
                 return (
                   <View key={template.id} style={[styles.templateCard, { backgroundColor: theme.card }, shadows.sm]}>
@@ -459,17 +573,27 @@ export default function HomeScreen() {
                           {template.days}
                         </Text>
                         <Text style={[styles.templateDetails, { color: theme.textSecondary }]}>
-                          days • 
+                          {' '}days • 
                         </Text>
                         <Text style={[styles.templateDetails, { color: theme.textSecondary }]}>
-                          {template.weather}
+                          {travelTypeLabel}
                         </Text>
                         <Text style={[styles.templateDetails, { color: theme.textSecondary }]}>
-                           • 
+                          {' '}• 
                         </Text>
                         <Text style={[styles.templateDetails, { color: theme.textSecondary }]}>
-                          {template.tripType}
+                          {packingStyleLabel}
                         </Text>
+                        {template.city && (
+                          <React.Fragment>
+                            <Text style={[styles.templateDetails, { color: theme.textSecondary }]}>
+                              {' '}• 
+                            </Text>
+                            <Text style={[styles.templateDetails, { color: theme.textSecondary }]}>
+                              {template.city}
+                            </Text>
+                          </React.Fragment>
+                        )}
                         <Text style={[styles.templateCount, { color: theme.primary }]}>{templateProgressText}</Text>
                       </View>
                     </TouchableOpacity>
@@ -576,6 +700,11 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     padding: spacing.md,
     ...typography.body,
+  },
+  helperText: {
+    ...typography.bodySmall,
+    marginTop: spacing.xs,
+    fontStyle: 'italic',
   },
   optionsGrid: {
     flexDirection: 'row',
