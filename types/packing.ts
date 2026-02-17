@@ -9,6 +9,7 @@ export interface PackingItem {
   name: string;
   category: string;
   checked: boolean;
+  isCustom?: boolean;
 }
 
 export interface TripTemplate {
@@ -20,6 +21,8 @@ export interface TripTemplate {
   travelType: TravelType;
   packingStyle: PackingStyle;
   city?: string;
+  startDate?: string;
+  endDate?: string;
   items: PackingItem[];
   createdAt: string;
 }
@@ -31,4 +34,6 @@ export interface TripParams {
   travelType: TravelType;
   packingStyle: PackingStyle;
   city?: string;
+  startDate?: string;
+  endDate?: string;
 }

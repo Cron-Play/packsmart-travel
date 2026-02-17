@@ -18,6 +18,7 @@ import { WeatherType, TripType, TravelType, PackingStyle, PackingItem, TripTempl
 import { generatePackingList, groupItemsByCategory, getCategoryDisplayName } from '@/utils/packingGenerator';
 import { saveTemplates, loadTemplates, deleteTemplate } from '@/utils/storage';
 import * as Haptics from 'expo-haptics';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
@@ -30,10 +31,21 @@ export default function HomeScreen() {
   const [travelType, setTravelType] = useState<TravelType>('local');
   const [packingStyle, setPackingStyle] = useState<PackingStyle>('normal');
   const [city, setCity] = useState('');
+  
+  // Date parameters
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
 
   // Packing list state
   const [packingItems, setPackingItems] = useState<PackingItem[]>([]);
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+
+  // Custom item state
+  const [showAddCustomItem, setShowAddCustomItem] = useState(false);
+  const [customItemName, setCustomItemName] = useState('');
+  const [customItemCategory, setCustomItemCategory] = useState('misc');
 
   // Templates state
   const [templates, setTemplates] = useState<TripTemplate[]>([]);
@@ -46,6 +58,16 @@ export default function HomeScreen() {
     loadSavedTemplates();
   }, []);
 
+  // Auto-calculate days when dates change
+  useEffect(() => {
+    if (startDate && endDate) {
+      const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      setDays(diffDays.toString());
+      console.log('Auto-calculated days from dates:', diffDays);
+    }
+  }, [startDate, endDate]);
+
   const loadSavedTemplates = async () => {
     const savedTemplates = await loadTemplates();
     setTemplates(savedTemplates);
@@ -53,7 +75,7 @@ export default function HomeScreen() {
   };
 
   const handleGenerateList = () => {
-    console.log('Generating packing list with params:', { days, weather, tripType, travelType, packingStyle, city });
+    console.log('Generating packing list with params:', { days, weather, tripType, travelType, packingStyle, city, startDate, endDate });
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
     const daysNum = parseInt(days) || 7;
@@ -63,7 +85,9 @@ export default function HomeScreen() {
       tripType, 
       travelType, 
       packingStyle,
-      city: tripType === 'city' ? city : undefined
+      city: tripType === 'city' ? city : undefined,
+      startDate: startDate?.toISOString(),
+      endDate: endDate?.toISOString(),
     });
     setPackingItems(items);
     setCollapsedCategories(new Set());
@@ -94,6 +118,38 @@ export default function HomeScreen() {
     });
   };
 
+  const handleAddCustomItem = () => {
+    if (!customItemName.trim()) {
+      Alert.alert('Error', 'Please enter an item name');
+      return;
+    }
+
+    if (packingItems.length === 0) {
+      Alert.alert('Error', 'Generate a packing list first');
+      return;
+    }
+
+    console.log('Adding custom item:', customItemName, 'to category:', customItemCategory);
+    const newItem: PackingItem = {
+      id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name: customItemName,
+      category: customItemCategory,
+      checked: false,
+      isCustom: true,
+    };
+
+    setPackingItems(prev => [...prev, newItem]);
+    setCustomItemName('');
+    setShowAddCustomItem(false);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
+
+  const handleDeleteCustomItem = (itemId: string) => {
+    console.log('Deleting custom item:', itemId);
+    setPackingItems(prev => prev.filter(item => item.id !== itemId));
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
   const handleSaveTemplate = async () => {
     if (!templateName.trim()) {
       Alert.alert('Error', 'Please enter a template name');
@@ -115,6 +171,8 @@ export default function HomeScreen() {
       travelType,
       packingStyle,
       city: tripType === 'city' ? city : undefined,
+      startDate: startDate?.toISOString(),
+      endDate: endDate?.toISOString(),
       items: packingItems,
       createdAt: new Date().toISOString(),
     };
@@ -137,6 +195,8 @@ export default function HomeScreen() {
     setTravelType(template.travelType);
     setPackingStyle(template.packingStyle);
     setCity(template.city || '');
+    setStartDate(template.startDate ? new Date(template.startDate) : undefined);
+    setEndDate(template.endDate ? new Date(template.endDate) : undefined);
     setPackingItems(template.items);
     setShowTemplates(false);
     setCollapsedCategories(new Set());
@@ -149,6 +209,33 @@ export default function HomeScreen() {
     setTemplates(updatedTemplates);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
+
+  const onStartDateChange = (event: any, selectedDate?: Date) => {
+    setShowStartDatePicker(false);
+    if (selectedDate) {
+      setStartDate(selectedDate);
+      console.log('Start date selected:', selectedDate);
+    }
+  };
+
+  const onEndDateChange = (event: any, selectedDate?: Date) => {
+    setShowEndDatePicker(false);
+    if (selectedDate) {
+      setEndDate(selectedDate);
+      console.log('End date selected:', selectedDate);
+    }
+  };
+
+  const formatDate = (date: Date | undefined): string => {
+    if (!date) return 'Select date';
+    const month = date.toLocaleString('default', { month: 'short' });
+    const day = date.getDate();
+    const year = date.getFullYear();
+    return `${month} ${day}, ${year}`;
+  };
+
+  const startDateText = formatDate(startDate);
+  const endDateText = formatDate(endDate);
 
   const groupedItems = groupItemsByCategory(packingItems);
   const categories = Object.keys(groupedItems);
@@ -184,6 +271,14 @@ export default function HomeScreen() {
     { value: 'heavy', label: 'Heavy', icon: 'suitcase.cart.fill' },
   ];
 
+  const categoryOptions = [
+    { value: 'clothing', label: 'Clothing' },
+    { value: 'toiletries', label: 'Toiletries' },
+    { value: 'tech', label: 'Tech & Electronics' },
+    { value: 'travelDocs', label: 'Travel Documents' },
+    { value: 'misc', label: 'Miscellaneous' },
+  ];
+
   const showCityInput = tripType === 'city';
 
   return (
@@ -192,6 +287,7 @@ export default function HomeScreen() {
         options={{
           headerShown: true,
           title: 'PackSmart',
+          headerLargeTitle: true,
           headerStyle: { backgroundColor: theme.card },
           headerTintColor: theme.text,
           headerShadowVisible: false,
@@ -221,6 +317,45 @@ export default function HomeScreen() {
         {/* Input Section */}
         <View style={[styles.card, { backgroundColor: theme.card }, shadows.md]}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Trip Details</Text>
+
+          {/* Travel Dates */}
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: theme.textSecondary }]}>Travel Dates (Optional)</Text>
+            <View style={styles.dateRow}>
+              <TouchableOpacity
+                style={[styles.dateButton, { backgroundColor: theme.background, borderColor: theme.border }]}
+                onPress={() => setShowStartDatePicker(true)}
+              >
+                <IconSymbol
+                  ios_icon_name="calendar"
+                  android_material_icon_name="calendar-today"
+                  size={18}
+                  color={theme.textSecondary}
+                />
+                <Text style={[styles.dateButtonText, { color: startDate ? theme.text : theme.textSecondary }]}>
+                  {startDateText}
+                </Text>
+              </TouchableOpacity>
+              <Text style={[styles.dateArrow, { color: theme.textSecondary }]}>→</Text>
+              <TouchableOpacity
+                style={[styles.dateButton, { backgroundColor: theme.background, borderColor: theme.border }]}
+                onPress={() => setShowEndDatePicker(true)}
+              >
+                <IconSymbol
+                  ios_icon_name="calendar"
+                  android_material_icon_name="calendar-today"
+                  size={18}
+                  color={theme.textSecondary}
+                />
+                <Text style={[styles.dateButtonText, { color: endDate ? theme.text : theme.textSecondary }]}>
+                  {endDateText}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={[styles.helperText, { color: theme.textSecondary }]}>
+              Dates help predict weather and calculate trip duration
+            </Text>
+          </View>
 
           {/* Days Input */}
           <View style={styles.inputGroup}>
@@ -413,18 +548,32 @@ export default function HomeScreen() {
                   ]}
                 />
               </View>
-              <TouchableOpacity
-                style={[styles.saveButton, { backgroundColor: theme.secondary }]}
-                onPress={() => setShowSaveModal(true)}
-              >
-                <IconSymbol
-                  ios_icon_name="bookmark.fill"
-                  android_material_icon_name="bookmark"
-                  size={18}
-                  color="#FFFFFF"
-                />
-                <Text style={styles.saveButtonText}>Save as Template</Text>
-              </TouchableOpacity>
+              <View style={styles.actionButtons}>
+                <TouchableOpacity
+                  style={[styles.actionButton, { backgroundColor: theme.secondary }]}
+                  onPress={() => setShowAddCustomItem(true)}
+                >
+                  <IconSymbol
+                    ios_icon_name="plus"
+                    android_material_icon_name="add"
+                    size={18}
+                    color="#FFFFFF"
+                  />
+                  <Text style={styles.actionButtonText}>Add Custom Item</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.actionButton, { backgroundColor: theme.secondary }]}
+                  onPress={() => setShowSaveModal(true)}
+                >
+                  <IconSymbol
+                    ios_icon_name="bookmark.fill"
+                    android_material_icon_name="bookmark"
+                    size={18}
+                    color="#FFFFFF"
+                  />
+                  <Text style={styles.actionButtonText}>Save Template</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {/* Categories */}
@@ -460,12 +609,14 @@ export default function HomeScreen() {
                   {!isCollapsed && (
                     <View style={styles.itemsList}>
                       {categoryItems.map(item => (
-                        <TouchableOpacity
+                        <View
                           key={item.id}
                           style={[styles.itemRow, { borderBottomColor: theme.border }]}
-                          onPress={() => toggleItemChecked(item.id)}
                         >
-                          <View style={styles.itemContent}>
+                          <TouchableOpacity
+                            style={styles.itemContent}
+                            onPress={() => toggleItemChecked(item.id)}
+                          >
                             <View
                               style={[
                                 styles.checkbox,
@@ -491,8 +642,26 @@ export default function HomeScreen() {
                             >
                               {item.name}
                             </Text>
-                          </View>
-                        </TouchableOpacity>
+                            {item.isCustom && (
+                              <View style={[styles.customBadge, { backgroundColor: theme.primary }]}>
+                                <Text style={styles.customBadgeText}>Custom</Text>
+                              </View>
+                            )}
+                          </TouchableOpacity>
+                          {item.isCustom && (
+                            <TouchableOpacity
+                              style={styles.deleteItemButton}
+                              onPress={() => handleDeleteCustomItem(item.id)}
+                            >
+                              <IconSymbol
+                                ios_icon_name="trash"
+                                android_material_icon_name="delete"
+                                size={18}
+                                color={theme.error}
+                              />
+                            </TouchableOpacity>
+                          )}
+                        </View>
                       ))}
                     </View>
                   )}
@@ -519,6 +688,87 @@ export default function HomeScreen() {
         )}
       </ScrollView>
 
+      {/* Date Pickers */}
+      {showStartDatePicker && (
+        <DateTimePicker
+          value={startDate || new Date()}
+          mode="date"
+          display="default"
+          onChange={onStartDateChange}
+          minimumDate={new Date()}
+        />
+      )}
+      {showEndDatePicker && (
+        <DateTimePicker
+          value={endDate || startDate || new Date()}
+          mode="date"
+          display="default"
+          onChange={onEndDateChange}
+          minimumDate={startDate || new Date()}
+        />
+      )}
+
+      {/* Add Custom Item Modal */}
+      <Modal
+        visible={showAddCustomItem}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowAddCustomItem(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.card }, shadows.lg]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Add Custom Item</Text>
+            <TextInput
+              style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+              value={customItemName}
+              onChangeText={setCustomItemName}
+              placeholder="Item name"
+              placeholderTextColor={theme.textSecondary}
+              autoFocus
+            />
+            <Text style={[styles.modalLabel, { color: theme.textSecondary }]}>Category</Text>
+            <View style={styles.categoryOptionsGrid}>
+              {categoryOptions.map(option => {
+                const isSelected = customItemCategory === option.value;
+                return (
+                  <TouchableOpacity
+                    key={option.value}
+                    style={[
+                      styles.categoryOptionButton,
+                      { backgroundColor: theme.background, borderColor: theme.border },
+                      isSelected && { backgroundColor: theme.primary, borderColor: theme.primary },
+                    ]}
+                    onPress={() => setCustomItemCategory(option.value)}
+                  >
+                    <Text style={[styles.categoryOptionText, { color: isSelected ? '#FFFFFF' : theme.text }]}>
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: theme.background }]}
+                onPress={() => {
+                  setShowAddCustomItem(false);
+                  setCustomItemName('');
+                  setCustomItemCategory('misc');
+                }}
+              >
+                <Text style={[styles.modalButtonText, { color: theme.text }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: theme.primary }]}
+                onPress={handleAddCustomItem}
+              >
+                <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>Add</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Templates Modal */}
       <Modal
         visible={showTemplates}
@@ -526,9 +776,9 @@ export default function HomeScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowTemplates(false)}
       >
-        <View style={[styles.modalContainer, { backgroundColor: theme.background }]}>
-          <View style={[styles.modalHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-            <Text style={[styles.modalTitle, { color: theme.text }]}>Saved Templates</Text>
+        <View style={[styles.fullModalContainer, { backgroundColor: theme.background }]}>
+          <View style={[styles.fullModalHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+            <Text style={[styles.fullModalTitle, { color: theme.text }]}>Saved Templates</Text>
             <TouchableOpacity onPress={() => setShowTemplates(false)}>
               <IconSymbol
                 ios_icon_name="xmark"
@@ -539,7 +789,7 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.modalContent}>
+          <ScrollView style={styles.fullModalContent}>
             {templates.length === 0 ? (
               <View style={styles.emptyTemplates}>
                 <IconSymbol
@@ -622,32 +872,32 @@ export default function HomeScreen() {
         transparent={true}
         onRequestClose={() => setShowSaveModal(false)}
       >
-        <View style={styles.saveModalOverlay}>
-          <View style={[styles.saveModalContent, { backgroundColor: theme.card }, shadows.lg]}>
-            <Text style={[styles.saveModalTitle, { color: theme.text }]}>Save Template</Text>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.card }, shadows.lg]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Save Template</Text>
             <TextInput
-              style={[styles.saveModalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+              style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
               value={templateName}
               onChangeText={setTemplateName}
               placeholder="Enter template name"
               placeholderTextColor={theme.textSecondary}
               autoFocus
             />
-            <View style={styles.saveModalButtons}>
+            <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={[styles.saveModalButton, { backgroundColor: theme.background }]}
+                style={[styles.modalButton, { backgroundColor: theme.background }]}
                 onPress={() => {
                   setShowSaveModal(false);
                   setTemplateName('');
                 }}
               >
-                <Text style={[styles.saveModalButtonText, { color: theme.text }]}>Cancel</Text>
+                <Text style={[styles.modalButtonText, { color: theme.text }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.saveModalButton, { backgroundColor: theme.primary }]}
+                style={[styles.modalButton, { backgroundColor: theme.primary }]}
                 onPress={handleSaveTemplate}
               >
-                <Text style={[styles.saveModalButtonText, { color: '#FFFFFF' }]}>Save</Text>
+                <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>Save</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -704,6 +954,28 @@ const styles = StyleSheet.create({
     ...typography.bodySmall,
     marginTop: spacing.xs,
     fontStyle: 'italic',
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  dateButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+  },
+  dateButtonText: {
+    ...typography.bodySmall,
+    flex: 1,
+  },
+  dateArrow: {
+    ...typography.body,
+    fontWeight: '600',
   },
   optionsGrid: {
     flexDirection: 'row',
@@ -765,7 +1037,12 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: borderRadius.full,
   },
-  saveButton: {
+  actionButtons: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  actionButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -773,7 +1050,7 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     borderRadius: borderRadius.md,
   },
-  saveButtonText: {
+  actionButtonText: {
     color: '#FFFFFF',
     ...typography.bodySmall,
     fontWeight: '600',
@@ -805,10 +1082,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   itemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
   },
   itemContent: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
@@ -829,6 +1109,19 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
     opacity: 0.5,
   },
+  customBadge: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+  },
+  customBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  deleteItemButton: {
+    padding: spacing.xs,
+  },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -844,20 +1137,80 @@ const styles = StyleSheet.create({
     ...typography.body,
     textAlign: 'center',
   },
-  modalContainer: {
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+  },
+  modalTitle: {
+    ...typography.h3,
+    marginBottom: spacing.md,
+  },
+  modalLabel: {
+    ...typography.bodySmall,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+    fontWeight: '600',
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    ...typography.body,
+  },
+  categoryOptionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginBottom: spacing.lg,
+  },
+  categoryOptionButton: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+  },
+  categoryOptionText: {
+    ...typography.bodySmall,
+    fontWeight: '500',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  modalButton: {
+    flex: 1,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    ...typography.body,
+    fontWeight: '600',
+  },
+  fullModalContainer: {
     flex: 1,
   },
-  modalHeader: {
+  fullModalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: spacing.lg,
     borderBottomWidth: 1,
   },
-  modalTitle: {
+  fullModalTitle: {
     ...typography.h3,
   },
-  modalContent: {
+  fullModalContent: {
     flex: 1,
     padding: spacing.md,
   },
@@ -898,43 +1251,5 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     padding: spacing.md,
-  },
-  saveModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.lg,
-  },
-  saveModalContent: {
-    width: '100%',
-    maxWidth: 400,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-  },
-  saveModalTitle: {
-    ...typography.h3,
-    marginBottom: spacing.md,
-  },
-  saveModalInput: {
-    borderWidth: 1,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    ...typography.body,
-    marginBottom: spacing.lg,
-  },
-  saveModalButtons: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  saveModalButton: {
-    flex: 1,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-  },
-  saveModalButtonText: {
-    ...typography.body,
-    fontWeight: '600',
   },
 });
