@@ -1,48 +1,37 @@
+
 {
   "expo": {
     "name": "PackSmart Travel Planner",
-    "slug": "pack-smart-travel-planner-uagrcj",
+    "slug": "packsmart-travel-planner",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/app-icon-whg.png",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/app-icon-whg.png",
+      "image": "./assets/images/final_quest_240x240.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0EA5E9"
+      "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.packsmart.app",
+      "bundleIdentifier": "com.yourcompany.packsmart",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "CFBundleAllowMixedLocalizations": true
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/app-icon-whg.png",
-        "backgroundColor": "#0EA5E9"
+        "foregroundImage": "./assets/images/final_quest_240x240__.png",
+        "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
-      "package": "com.cronplay.packsmart"
+      "package": "com.yourcompany.packsmart"
     },
     "web": {
-      "favicon": "./assets/images/final_quest_240x240.png",
-      "bundler": "metro"
+      "favicon": "./assets/images/final_quest_240x240.png"
     },
     "plugins": [
-      "expo-font",
-      "expo-router",
-      "expo-web-browser"
+      "expo-router"
     ],
-    "scheme": "PackSmart Travel Planner",
-    "experiments": {
-      "typedRoutes": true
-    },
-    "extra": {
-      "router": {},
-      "backendUrl": "https://awd52dy4pf5zcnffdax7s4z5rcgegfwk.app.specular.dev"
-    }
+    "scheme": "packsmart"
   }
 }
