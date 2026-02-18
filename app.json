@@ -32,6 +32,11 @@
     "plugins": [
       "expo-router"
     ],
-    "scheme": "packsmart"
+    "scheme": "packsmart",
+    "extra": {
+      "router": {
+        "origin": false
+      }
+    }
   }
 }
